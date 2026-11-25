@@ -122,12 +122,18 @@ def pedir_decimal(mensaje, actual=None):
 def pedir_categoria(actual=None):
     categorias = ["Zapatillas", "Accesorios", "Indumentaria", "Otros"]
     
+    # Mostramos el menú completo
     print("\nCategorías disponibles:")
-    for i, cat in enumerate(categorias, 1):
-        print(f"{i}. {cat}")
+    print("1. Zapatillas")
+    print("2. Accesorios")
+    print("3. Indumentaria")
+    print("4. Otros")
+    
+    # EL TRUCO MÁGICO: Forzamos a la consola a mostrar todo ANTES de pedir el input
+    import sys
+    sys.stdout.flush()
         
     while True:
-        # Si hay una categoría actual, la mostramos
         if actual:
             prompt = f"Elegí una opción (1-4) [Actual: {actual}]: "
         else:
@@ -135,11 +141,9 @@ def pedir_categoria(actual=None):
             
         opcion = input(prompt).strip()
         
-        # Si el usuario presiona Enter y hay una actual, mantenemos la actual
         if opcion == "" and actual:
             return actual
             
-        # Validamos que el número sea correcto
         try:
             indice = int(opcion) - 1
             if 0 <= indice < len(categorias):
