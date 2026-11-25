@@ -197,9 +197,26 @@ def registrar_producto():
         VALUES (?, ?, ?, ?, ?)
     """
     filas = ejecutar_consulta(sql, (nombre, descripcion, cantidad, precio, categoria))
+    
     if filas > 0:
         mostrar_exito(f"Producto '{nombre}' registrado correctamente.")
         registrar_log("INFO", f"Producto registrado: {nombre} (cant: {cantidad}, precio: {precio})")
+        
+        # --- NUEVO BUCLE DE PREGUNTA ---
+        while True:
+            print("\n¿Qué querés hacer ahora?")
+            print("1. Cargar otro producto")
+            print("2. Volver al menú principal")
+            opcion = input("Elegí una opción (1-2): ").strip()
+            
+            if opcion == "1":
+                registrar_producto() # Vuelve a llamar a esta misma función
+                break
+            elif opcion == "2":
+                break # Rompe el bucle y sale de la función para volver al menú
+            else:
+                mostrar_error("Opción inválida. Elegí 1 o 2.")
+
 
 def ver_productos():
     mostrar_titulo("LISTADO DE PRODUCTOS")
@@ -211,6 +228,7 @@ def actualizar_producto():
     mostrar_titulo("ACTUALIZAR PRODUCTO")
     id_producto = pedir_entero("ID del producto a actualizar")
     producto = obtener_producto_por_id(id_producto)
+
 
     if producto is None:
         mostrar_error(f"No existe un producto con ID {id_producto}.")
@@ -233,6 +251,7 @@ def actualizar_producto():
     filas = ejecutar_consulta(sql, (nuevo_nombre, nueva_descripcion, nueva_cantidad, nuevo_precio, nueva_categoria, id_producto))
     if filas > 0:
         mostrar_exito("Producto actualizado correctamente.")
+        input("\nPresioná Enter para volver al menú principal...")
         registrar_log("INFO", f"Producto actualizado: ID {id_producto} ({nuevo_nombre})")
 
 def eliminar_producto():
@@ -252,6 +271,7 @@ def eliminar_producto():
     filas = ejecutar_consulta("DELETE FROM productos WHERE id = ?", (id_producto,))
     if filas > 0:
         mostrar_exito("Producto eliminado correctamente.")
+        input("\nPresioná Enter para volver al menú principal...")
         registrar_log("WARNING", f"Producto eliminado: ID {id_producto} ({producto[1]})")
 
 def buscar_producto():
