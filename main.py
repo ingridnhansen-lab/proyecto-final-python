@@ -221,15 +221,41 @@ def eliminar_producto():
         registrar_log("WARNING", f"Producto eliminado: ID {id_producto} ({producto[1]})")
 
 def buscar_producto():
-    mostrar_titulo("BUSCAR PRODUCTO POR ID")
-    id_producto = pedir_entero("Ingresá el ID del producto a buscar")
-    producto = obtener_producto_por_id(id_producto)
+    mostrar_titulo("BUSCAR PRODUCTO")
+    print("1. Buscar por ID")
+    print("2. Buscar por Nombre")
+    print("3. Buscar por Categoría")
+    opcion = input("¿Cómo querés buscar? (1/2/3): ").strip()
 
-    if producto is None:
-        mostrar_error(f"No se encontró ningún producto con el ID {id_producto}.")
+    if opcion == "1":
+        id_producto = pedir_entero("Ingresá el ID del producto")
+        # Buscamos exacto por ID
+        sql = "SELECT * FROM productos WHERE id = ?"
+        productos = ejecutar_consulta(sql, (id_producto,), traer_datos=True)
+        
+    elif opcion == "2":
+        nombre = pedir_texto("Ingresá el nombre (o parte del nombre) del producto")
+        # Usamos el comodín '%' para que busque coincidencias parciales. 
+        # Ej: si busca "zap", encontrará "zapatillas" y "zapato".
+        sql = "SELECT * FROM productos WHERE nombre LIKE ?"
+        productos = ejecutar_consulta(sql, (f"%{nombre}%",), traer_datos=True)
+        
+    elif opcion == "3":
+        categoria = pedir_texto("Ingresá la categoría")
+        sql = "SELECT * FROM productos WHERE categoria LIKE ?"
+        productos = ejecutar_consulta(sql, (f"%{categoria}%",), traer_datos=True)
+        
     else:
-        mostrar_tabla([producto])
-        registrar_log("INFO", f"Se buscó el producto ID {id_producto}")
+        mostrar_error("Opción inválida.")
+        return
+
+    # Mostramos los resultados (sean 1 o muchos)
+    if not productos:
+        mostrar_aviso("No se encontraron productos que coincidan con la búsqueda.")
+    else:
+        mostrar_exito(f"Se encontraron {len(productos)} producto(s):")
+        mostrar_tabla(productos)
+        registrar_log("INFO", f"Se realizó una búsqueda (opción {opcion})")
 
 def reporte_bajo_stock():
     mostrar_titulo("REPORTE DE BAJO STOCK")
