@@ -272,6 +272,30 @@ def reporte_bajo_stock():
         
     registrar_log("INFO", f"Se generó reporte de bajo stock (límite: {limite})")
 
+def cargar_datos_prueba():
+    mostrar_titulo("CARGAR DATOS DE PRUEBA")
+    
+    try:
+        # Abrimos el archivo SQL y leemos todo su contenido
+        with open("datos_prueba.sql", "r", encoding="utf-8") as archivo:
+            consulta_sql = archivo.read()
+            
+        # Ejecutamos la consulta en la base de datos
+        conexion = sqlite3.connect(RUTA_DB)
+        cursor = conexion.cursor()
+        cursor.executescript(consulta_sql) # executescript sirve para ejecutar múltiples comandos
+        conexion.commit()
+        conexion.close()
+        
+        mostrar_exito("¡Datos de prueba cargados exitosamente!")
+        registrar_log("INFO", "Se cargaron datos de prueba desde el archivo .sql")
+        
+    except FileNotFoundError:
+        mostrar_error("No se encontró el archivo 'datos_prueba.sql'. Asegurate de crearlo.")
+    except sqlite3.Error as error:
+        mostrar_error(f"Error al cargar los datos: {error}")
+
+
 # MENU Y EJECUCION PRINCIPAL
 def mostrar_menu():
     print()
@@ -284,6 +308,7 @@ def mostrar_menu():
     print("4. Eliminar producto")
     print("5. Buscar producto por ID")
     print("6. Reporte de bajo stock")
+    print("7. Cargar datos de prueba (SQL)") 
     print("0. Salir")
 
 def main():
@@ -296,6 +321,7 @@ def main():
         "4": eliminar_producto,
         "5": buscar_producto,
         "6": reporte_bajo_stock,
+        "7": cargar_datos_prueba,
     }
 
     while True:
