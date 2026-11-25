@@ -1,13 +1,13 @@
 # _IMPORTACION
-
 import sqlite3
 import os 
-from colorama import Fore,init, Style 
+from colorama import Fore, init, Style 
 from datetime import datetime
 
+# Inicializar colorama
+init(autoreset=True)
 
 # _CONFIGURACION 
-
 RUTA_DB = "inventario.db"
 CARPETA_LOGS = "logs"
 RUTA_LOG = f"{CARPETA_LOGS}/inventario.log"
@@ -15,16 +15,16 @@ RUTA_LOG = f"{CARPETA_LOGS}/inventario.log"
 os.makedirs(CARPETA_LOGS, exist_ok=True)
 
 def registrar_log(nivel, mensaje):
-    """ agrega uina linea al archivo .log """
+    """ agrega una linea al archivo .log """
     fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     linea = f"{fecha_hora} | {nivel} | {mensaje}\n"
-    with open(RUTA_LOG,"a",encoding="utf-8") as archivo:
+    with open(RUTA_LOG, "a", encoding="utf-8") as archivo:
         archivo.write(linea)
 
 # LOS MENSAJES CON COLORAMA
-
 def mostrar_exito(texto):
     print(Fore.GREEN + f" {texto}")  
+
 def mostrar_error(texto):
     print(Fore.RED + f" {texto}")
 
@@ -36,8 +36,7 @@ def mostrar_titulo(texto):
     print(Fore.CYAN + Style.BRIGHT + f"=== {texto} ===")
 
 # BASE DE DATOS 
-
-def ejecutar_consulta(sql, parametros = (), traer_datos=False):
+def ejecutar_consulta(sql, parametros=(), traer_datos=False):
     conexion = sqlite3.connect(RUTA_DB)
     try:
         cursor = conexion.cursor()
@@ -67,10 +66,9 @@ def crear_tabla():
         )
     """
     ejecutar_consulta(sql)
-    registrar_log("INFO","Programa inicado. Tabla 'productos' verificado.")
+    registrar_log("INFO", "Programa iniciado. Tabla 'productos' verificada.")
 
 # VALIDACIONES 
-
 def pedir_texto(mensaje, obligatorio=True, actual=None):
     while True:
         if actual is not None:
@@ -121,13 +119,11 @@ def pedir_decimal(mensaje, actual=None):
         except ValueError:
             mostrar_error("Ingresá un número válido (ej: 1500.50).")
 
-def confirmar(mensaje:str) -> bool:
+def confirmar(mensaje: str) -> bool:
     respuesta = input(f"{mensaje} (s/n): ").strip().lower()
     return respuesta == "s"
 
-
 # MOSTRAR PRODUCTOS 
-
 def mostrar_tabla(productos):
     if not productos:
         mostrar_aviso("No hay productos para mostrar.")
@@ -154,7 +150,6 @@ def obtener_producto_por_id(id_producto):
     return resultado[0] if resultado else None
 
 # FUNCIONALIDADES 
-
 def registrar_producto():
     mostrar_titulo("REGISTRAR PRODUCTO")
     nombre = pedir_texto("Nombre")
@@ -225,8 +220,33 @@ def eliminar_producto():
         mostrar_exito("Producto eliminado correctamente.")
         registrar_log("WARNING", f"Producto eliminado: ID {id_producto} ({producto[1]})")
 
+def buscar_producto():
+    mostrar_titulo("BUSCAR PRODUCTO POR ID")
+    id_producto = pedir_entero("Ingresá el ID del producto a buscar")
+    producto = obtener_producto_por_id(id_producto)
 
+    if producto is None:
+        mostrar_error(f"No se encontró ningún producto con el ID {id_producto}.")
+    else:
+        mostrar_tabla([producto])
+        registrar_log("INFO", f"Se buscó el producto ID {id_producto}")
 
+def reporte_bajo_stock():
+    mostrar_titulo("REPORTE DE BAJO STOCK")
+    limite = pedir_entero("Mostrar productos con cantidad igual o menor a")
+    
+    sql = "SELECT * FROM productos WHERE cantidad <= ? ORDER BY cantidad ASC"
+    productos = ejecutar_consulta(sql, (limite,), traer_datos=True)
+    
+    if not productos:
+        mostrar_aviso(f"No hay productos con cantidad igual o menor a {limite}.")
+    else:
+        mostrar_aviso(f"Productos con stock crítico (<= {limite}):")
+        mostrar_tabla(productos)
+        
+    registrar_log("INFO", f"Se generó reporte de bajo stock (límite: {limite})")
+
+# MENU Y EJECUCION PRINCIPAL
 def mostrar_menu():
     print()
     print(Fore.MAGENTA + Style.BRIGHT + "╔══════════════════════════════════╗")
@@ -236,13 +256,20 @@ def mostrar_menu():
     print("2. Ver productos")
     print("3. Actualizar producto")
     print("4. Eliminar producto")
+    print("5. Buscar producto por ID")
+    print("6. Reporte de bajo stock")
     print("0. Salir")
 
 def main():
     crear_tabla()
+    
     acciones = {
-        "1": registrar_producto, "2": ver_productos, "3": actualizar_producto,
+        "1": registrar_producto, 
+        "2": ver_productos, 
+        "3": actualizar_producto,
         "4": eliminar_producto,
+        "5": buscar_producto,
+        "6": reporte_bajo_stock,
     }
 
     while True:
@@ -259,4 +286,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-# condicion para ejecutar este modulo como modulo principal ( que no entre en loop)
