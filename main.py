@@ -127,21 +127,25 @@ def pedir_categoria(actual=None):
         print(f"{i}. {cat}")
         
     while True:
-        prompt = f"Elegí una categoría (1-{len(categorias)})"
+        # Si hay una categoría actual, la mostramos
         if actual:
-            prompt += f" [Actual: {actual}]"
+            prompt = f"Elegí una opción (1-4) [Actual: {actual}]: "
+        else:
+            prompt = "Elegí una opción (1-4): "
             
-        opcion = input(f"{prompt}: ").strip()
+        opcion = input(prompt).strip()
         
+        # Si el usuario presiona Enter y hay una actual, mantenemos la actual
         if opcion == "" and actual:
             return actual
             
+        # Validamos que el número sea correcto
         try:
             indice = int(opcion) - 1
             if 0 <= indice < len(categorias):
                 return categorias[indice]
             else:
-                mostrar_error("Número fuera de rango. Elegí una opción válida.")
+                mostrar_error("Número fuera de rango. Elegí del 1 al 4.")
         except ValueError:
             mostrar_error("Ingresá el número de la categoría (ej: 1).")
 
