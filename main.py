@@ -4,7 +4,7 @@ import os
 from colorama import Fore, init, Style 
 from datetime import datetime
 
-# Inicializar colorama
+# Inicializar colorama (autoreset=True evita que el color se quede "pegado" en la terminal)
 init(autoreset=True)
 
 # _CONFIGURACION 
@@ -119,6 +119,32 @@ def pedir_decimal(mensaje, actual=None):
         except ValueError:
             mostrar_error("Ingresá un número válido (ej: 1500.50).")
 
+def pedir_categoria(actual=None):
+    categorias = ["Zapatillas", "Accesorios", "Indumentaria", "Otros"]
+    
+    print("\nCategorías disponibles:")
+    for i, cat in enumerate(categorias, 1):
+        print(f"{i}. {cat}")
+        
+    while True:
+        prompt = f"Elegí una categoría (1-{len(categorias)})"
+        if actual:
+            prompt += f" [Actual: {actual}]"
+            
+        opcion = input(f"{prompt}: ").strip()
+        
+        if opcion == "" and actual:
+            return actual
+            
+        try:
+            indice = int(opcion) - 1
+            if 0 <= indice < len(categorias):
+                return categorias[indice]
+            else:
+                mostrar_error("Número fuera de rango. Elegí una opción válida.")
+        except ValueError:
+            mostrar_error("Ingresá el número de la categoría (ej: 1).")
+
 def confirmar(mensaje: str) -> bool:
     respuesta = input(f"{mensaje} (s/n): ").strip().lower()
     return respuesta == "s"
@@ -155,8 +181,8 @@ def registrar_producto():
     nombre = pedir_texto("Nombre")
     descripcion = pedir_texto("Descripción (opcional)", obligatorio=False)
     cantidad = pedir_entero("Cantidad")
-    precio = pedir_decimal("Precio")
-    categoria = pedir_texto("Categoría (opcional)", obligatorio=False)
+    precio = pedir_decimal("Precio por unidad") 
+    categoria = pedir_categoria()                
 
     sql = """
         INSERT INTO productos (nombre, descripcion, cantidad, precio, categoria)
@@ -188,8 +214,8 @@ def actualizar_producto():
     nuevo_nombre = pedir_texto("Nombre", actual=nombre)
     nueva_descripcion = pedir_texto("Descripción", actual=descripcion or "")
     nueva_cantidad = pedir_entero("Cantidad", actual=cantidad)
-    nuevo_precio = pedir_decimal("Precio", actual=precio)
-    nueva_categoria = pedir_texto("Categoría", actual=categoria or "")
+    nuevo_precio = pedir_decimal("Precio por unidad", actual=precio)
+    nueva_categoria = pedir_categoria(actual=categoria)
 
     sql = """
         UPDATE productos
@@ -229,14 +255,11 @@ def buscar_producto():
 
     if opcion == "1":
         id_producto = pedir_entero("Ingresá el ID del producto")
-        # Buscamos exacto por ID
         sql = "SELECT * FROM productos WHERE id = ?"
         productos = ejecutar_consulta(sql, (id_producto,), traer_datos=True)
         
     elif opcion == "2":
-        nombre = pedir_texto("Ingresá el nombre (o parte del nombre) del producto")
-        # Usamos el comodín '%' para que busque coincidencias parciales. 
-        # Ej: si busca "zap", encontrará "zapatillas" y "zapato".
+        nombre = pedir_texto("Ingresá el nombre (o parte del nombre)")
         sql = "SELECT * FROM productos WHERE nombre LIKE ?"
         productos = ejecutar_consulta(sql, (f"%{nombre}%",), traer_datos=True)
         
@@ -249,7 +272,6 @@ def buscar_producto():
         mostrar_error("Opción inválida.")
         return
 
-    # Mostramos los resultados (sean 1 o muchos)
     if not productos:
         mostrar_aviso("No se encontraron productos que coincidan con la búsqueda.")
     else:
@@ -274,16 +296,17 @@ def reporte_bajo_stock():
 
 def cargar_datos_prueba():
     mostrar_titulo("CARGAR DATOS DE PRUEBA")
-    
     try:
-        # Abrimos el archivo SQL y leemos todo su contenido
         with open("datos_prueba.sql", "r", encoding="utf-8") as archivo:
             consulta_sql = archivo.read()
             
-        # Ejecutamos la consulta en la base de datos
         conexion = sqlite3.connect(RUTA_DB)
         cursor = conexion.cursor()
-        cursor.executescript(consulta_sql) # executescript sirve para ejecutar múltiples comandos
+        
+        # Limpiamos la tabla antes de cargar para no duplicar si se ejecuta dos veces
+        cursor.execute("DELETE FROM productos")
+        
+        cursor.executescript(consulta_sql) 
         conexion.commit()
         conexion.close()
         
@@ -291,10 +314,9 @@ def cargar_datos_prueba():
         registrar_log("INFO", "Se cargaron datos de prueba desde el archivo .sql")
         
     except FileNotFoundError:
-        mostrar_error("No se encontró el archivo 'datos_prueba.sql'. Asegurate de crearlo.")
+        mostrar_error("No se encontró el archivo 'datos_prueba.sql'.")
     except sqlite3.Error as error:
         mostrar_error(f"Error al cargar los datos: {error}")
-
 
 # MENU Y EJECUCION PRINCIPAL
 def mostrar_menu():
@@ -306,9 +328,9 @@ def mostrar_menu():
     print("2. Ver productos")
     print("3. Actualizar producto")
     print("4. Eliminar producto")
-    print("5. Buscar producto por ID")
+    print("5. Buscar producto")
     print("6. Reporte de bajo stock")
-    print("7. Cargar datos de prueba (SQL)") 
+    print("7. Cargar datos de prueba (SQL)")
     print("0. Salir")
 
 def main():
